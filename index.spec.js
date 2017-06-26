@@ -1,8 +1,13 @@
 const lsl = require('./index');
+const os = require('os');
 
 describe('library_version', () => {
     it('should return library version', () => {
-        expect(lsl.library_version()).toEqual(112);
+        if (os.platform() === 'win32') {
+            expect(lsl.library_version()).toEqual(112);
+        } else {
+            expect(lsl.library_version()).toEqual(110);
+        }
     });
 });
 
