@@ -1,3 +1,4 @@
+const path = require('path');
 const ffi = require('ffi');
 const ref = require('ref');
 const ArrayType = require('ref-array');
@@ -37,7 +38,7 @@ if (!libName) {
     throw new Error(`Unsupported CPU architecture for node-lsl: ${process.arch}`);
 }
 
-const lsl = ffi.Library('./prebuilt/' + libName, {
+const lsl = ffi.Library(path.join(__dirname, 'prebuilt', libName), {
     'lsl_protocol_version': ['int', []],
     'lsl_library_version': ['int', []],
     'lsl_create_streaminfo': [streamInfo, ['string', 'string', 'int', 'double', 'int', 'string']],
