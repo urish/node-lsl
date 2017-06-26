@@ -2,6 +2,8 @@
 
 [Lab stream layerl (LSL)](https://github.com/sccn/labstreaminglayer) bindings for node.js.
 
+[![Build Status](https://travis-ci.org/urish/node-lsl.png?branch=master)](https://travis-ci.org/urish/node-lsl)
+
 Not all functions are currently available - pull requests are welcome (please also include a [relevant test](index.spec.js)).
 
 ## Usage example:
