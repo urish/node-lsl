@@ -1,0 +1,2 @@
+Version: 1.12
+Source: ftp://sccn.ucsd.edu/pub/software/LSL/SDK/liblsl-C-C++-1.12.zip
