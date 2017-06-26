@@ -13,6 +13,14 @@ const channel_format_t: {
     cft_undefined: number;
 };
 
+const error_code_t: {
+    no_error: number;
+    timeout_error: number;
+    lost_error: number;
+    argument_error: number;
+    internal_error: number;
+};
+
 class FloatArray {
     constructor(values: number[]);
 }
@@ -27,6 +35,6 @@ function get_desc(stream: streamInfo): xmlPtr;
 function append_child_value(e: xmlPtr, name: string, value: string): void { }
 function append_child(e: xmlPtr, name: string): xmlPtr { }
 function create_outlet(info: xmlPtr, chunk_size: number, max_buffered: number): outletType { }
-function push_sample_f(out: outletType, data: FloatArray): void;
-function push_sample_ft(out: outletType, data: FloatArray, timestamp: number): void;
+function push_sample_f(out: outletType, data: FloatArray): number;
+function push_sample_ft(out: outletType, data: FloatArray, timestamp: number): number;
 function destroy_outlet(out: outletType): void;

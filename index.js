@@ -18,6 +18,14 @@ const channel_format_t = {
     cft_int64: 7,
 }
 
+const error_code_t = {
+    no_error: 0,
+    timeout_error: -1,
+    lost_error: -2,
+    argument_error: -3,
+    internal_error: -4,
+};
+
 const architectures = {
     x86: 'liblsl32',
     ia32: 'liblsl32',
@@ -40,13 +48,14 @@ const lsl = ffi.Library('./prebuilt/' + libName, {
     'lsl_append_child': [xmlPtr, [xmlPtr, 'string']],
     'lsl_create_outlet': [outletType, [streamInfo, 'int', 'int']],
     'lsl_local_clock': ['double', []],
-    'lsl_push_sample_f': ['void', [outletType, FloatArray]],
-    'lsl_push_sample_ft': ['void', [outletType, FloatArray, 'double']],
+    'lsl_push_sample_f': ['int', [outletType, FloatArray]],
+    'lsl_push_sample_ft': ['int', [outletType, FloatArray, 'double']],
     'lsl_destroy_outlet': ['void', [outletType]],
 });
 
 module.exports = {
     channel_format_t,
+    error_code_t,
     FloatArray,
     protocol_version: lsl.lsl_protocol_version,
     library_version: lsl.lsl_library_version,
