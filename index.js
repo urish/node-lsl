@@ -7,6 +7,7 @@ const streamInfo = ref.refType(ref.types.void);
 const xmlPtr = ref.refType(ref.types.void);
 const outletType = ref.refType(ref.types.void);
 const FloatArray = ArrayType(ref.types.float);
+const buffer = ref.refType(ref.types.void);
 
 const channel_format_t = {
     cft_undefined: 0,
@@ -52,6 +53,7 @@ const lsl = ffi.Library(path.join(__dirname, 'prebuilt', libName), {
     lsl_push_sample_f: ['int', [outletType, FloatArray]],
     lsl_push_sample_ft: ['int', [outletType, FloatArray, 'double']],
     lsl_destroy_outlet: ['void', [outletType]],
+    lsl_resolve_byprop: ['int', [buffer, 'int', 'string', 'string', 'int', 'double']],
 });
 
 module.exports = {
@@ -71,4 +73,5 @@ module.exports = {
     push_sample_f: lsl.lsl_push_sample_f,
     push_sample_ft: lsl.lsl_push_sample_ft,
     destroy_outlet: lsl.lsl_destroy_outlet,
+    resolve_byprop: lsl.lsl_resolve_byprop,
 };

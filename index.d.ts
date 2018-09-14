@@ -1,6 +1,7 @@
 type streamInfo = {};
 type xmlPtr = {};
 type outletType = {};
+type buffer = {};
 
 const channel_format_t: {
     cft_float32: number;
@@ -38,3 +39,4 @@ function create_outlet(info: xmlPtr, chunk_size: number, max_buffered: number): 
 function push_sample_f(out: outletType, data: FloatArray): number;
 function push_sample_ft(out: outletType, data: FloatArray, timestamp: number): number;
 function destroy_outlet(out: outletType): void;
+function resolve_byprop(buffer: buffer, buffer_elements: number, prop: string, value: string, minimum: number, timeout: number): streamInfo 
