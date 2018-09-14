@@ -17,7 +17,7 @@ const channel_format_t = {
     cft_int16: 5,
     cft_int8: 6,
     cft_int64: 7,
-}
+};
 
 const error_code_t = {
     no_error: 0,
@@ -30,8 +30,8 @@ const error_code_t = {
 const architectures = {
     x86: 'liblsl32',
     ia32: 'liblsl32',
-    x64: 'liblsl64'
-}
+    x64: 'liblsl64',
+};
 
 const libName = architectures[process.arch];
 if (!libName) {
@@ -39,19 +39,19 @@ if (!libName) {
 }
 
 const lsl = ffi.Library(path.join(__dirname, 'prebuilt', libName), {
-    'lsl_protocol_version': ['int', []],
-    'lsl_library_version': ['int', []],
-    'lsl_create_streaminfo': [streamInfo, ['string', 'string', 'int', 'double', 'int', 'string']],
-    'lsl_destroy_streaminfo': ['void', [streamInfo]],
-    'lsl_copy_streaminfo': [streamInfo, [streamInfo]],
-    'lsl_get_desc': [xmlPtr, [streamInfo]],
-    'lsl_append_child_value': ['void', [xmlPtr, 'string', 'string']],
-    'lsl_append_child': [xmlPtr, [xmlPtr, 'string']],
-    'lsl_create_outlet': [outletType, [streamInfo, 'int', 'int']],
-    'lsl_local_clock': ['double', []],
-    'lsl_push_sample_f': ['int', [outletType, FloatArray]],
-    'lsl_push_sample_ft': ['int', [outletType, FloatArray, 'double']],
-    'lsl_destroy_outlet': ['void', [outletType]],
+    lsl_protocol_version: ['int', []],
+    lsl_library_version: ['int', []],
+    lsl_create_streaminfo: [streamInfo, ['string', 'string', 'int', 'double', 'int', 'string']],
+    lsl_destroy_streaminfo: ['void', [streamInfo]],
+    lsl_copy_streaminfo: [streamInfo, [streamInfo]],
+    lsl_get_desc: [xmlPtr, [streamInfo]],
+    lsl_append_child_value: ['void', [xmlPtr, 'string', 'string']],
+    lsl_append_child: [xmlPtr, [xmlPtr, 'string']],
+    lsl_create_outlet: [outletType, [streamInfo, 'int', 'int']],
+    lsl_local_clock: ['double', []],
+    lsl_push_sample_f: ['int', [outletType, FloatArray]],
+    lsl_push_sample_ft: ['int', [outletType, FloatArray, 'double']],
+    lsl_destroy_outlet: ['void', [outletType]],
 });
 
 module.exports = {
