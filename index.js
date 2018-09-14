@@ -7,7 +7,9 @@ const streamInfo = ref.refType(ref.types.void);
 const xmlPtr = ref.refType(ref.types.void);
 const outletType = ref.refType(ref.types.void);
 const FloatArray = ArrayType(ref.types.float);
+const DoubleArray = ArrayType(ref.types.double);
 const buffer = ref.refType(ref.types.void);
+const inletType = ref.refType(ref.types.void);
 
 const channel_format_t = {
     cft_undefined: 0,
@@ -54,12 +56,15 @@ const lsl = ffi.Library(path.join(__dirname, 'prebuilt', libName), {
     lsl_push_sample_ft: ['int', [outletType, FloatArray, 'double']],
     lsl_destroy_outlet: ['void', [outletType]],
     lsl_resolve_byprop: ['int', [buffer, 'int', 'string', 'string', 'int', 'double']],
+    lsl_create_inlet: [inletType, [streamInfo, 'int', 'int', 'int']],
+    lsl_pull_chunk_f: ['ulong', [inletType, FloatArray, DoubleArray, 'ulong', 'ulong', 'double', 'int']],
 });
 
 module.exports = {
     channel_format_t,
     error_code_t,
     FloatArray,
+    DoubleArray,
     protocol_version: lsl.lsl_protocol_version,
     library_version: lsl.lsl_library_version,
     local_clock: lsl.lsl_local_clock,
@@ -74,4 +79,6 @@ module.exports = {
     push_sample_ft: lsl.lsl_push_sample_ft,
     destroy_outlet: lsl.lsl_destroy_outlet,
     resolve_byprop: lsl.lsl_resolve_byprop,
+    create_inlet: lsl.lsl_create_inlet,
+    pull_chunk: lsl.lsl_pull_chunk_f,
 };
