@@ -16,7 +16,7 @@ for (let i = 0; i < numStreams; i++) {
 streamInlet = new StreamInlet(streams[0], 10, 5);
 streamInlet.on('chunk', console.log);
 streamInlet.on('closed', console.log);
-streamInlet.streamChunks();
+streamInlet.streamChunks(10);
 
 // // Open an inlet
 // const chunkSize = 5;
