@@ -2,6 +2,7 @@ const path = require('path');
 const ffi = require('ffi');
 const ref = require('ref');
 const ArrayType = require('ref-array');
+const EventEmitter = require('events');
 
 const streamInfo = ref.refType(ref.types.void);
 const xmlPtr = ref.refType(ref.types.void);
@@ -60,6 +61,68 @@ const lsl = ffi.Library(path.join(__dirname, 'prebuilt', libName), {
     lsl_pull_chunk_f: ['ulong', [inletType, FloatArray, DoubleArray, 'ulong', 'ulong', 'double', 'int']],
 });
 
+const resolve_byprop = (prop, value, min = 1, timeout = 10) => {
+    const buf = Buffer.alloc(1024);
+    const numStreams = lsl.lsl_resolve_byprop(buf, 1024, prop, value, min, timeout);
+    const streams = [];
+    for (let i = 0; i < numStreams; i++) {
+        streams.push(ref.readPointer(buf, i));
+    }
+    return streams;
+};
+
+/**
+ * Creates an instance of the stream inlet object.
+ * @constructor
+ * @name StreamInlet
+ * @param ...
+ */
+class StreamInlet extends EventEmitter {
+    constructor(stream, max_buflen = 360, max_chunklen = 0, recover = 1) {
+        super();
+        this.max_buflen = max_buflen;
+        this.max_chunklen = max_chunklen;
+        this.recover = recover;
+        this.isStreaming = false;
+        this.inlet = lsl.lsl_create_inlet(stream, this.max_buflen, this.max_chunklen, this.recover);
+    }
+
+    streamChunks(timeout = 10) {
+        this.isStreaming = true;
+        this.timeout = timeout;
+        this.errCode = 0;
+        let sampleBuffer = new FloatArray(this.max_buflen); // Not sure how we should set the size of this thing. Look to C# wrapper for ideas
+        let timestampBuffer = new DoubleArray(this.max_buflen);
+        try {
+            while (this.isStreaming) {
+                const samps = lsl.lsl_pull_chunk_f(
+                    this.inlet,
+                    sampleBuffer,
+                    timestampBuffer,
+                    sampleBuffer.length,
+                    timestampBuffer.length,
+                    this.timeout,
+                    this.errCode,
+                );
+                console.log('pulled ', samps);
+                this.emit('chunk', { samples: sampleBuffer.toJSON(), timestamps: timestampBuffer.toJSON() });
+            }
+        } catch (e) {
+            console.error(e);
+            this.close();
+        }
+    }
+
+    close() {
+        this.isStreaming = false;
+        this.emit('closed');
+    }
+
+    getIsStreaming() {
+        return this.isStreaming;
+    }
+}
+
 module.exports = {
     channel_format_t,
     error_code_t,
@@ -78,7 +141,8 @@ module.exports = {
     push_sample_f: lsl.lsl_push_sample_f,
     push_sample_ft: lsl.lsl_push_sample_ft,
     destroy_outlet: lsl.lsl_destroy_outlet,
-    resolve_byprop: lsl.lsl_resolve_byprop,
+    resolve_byprop,
     create_inlet: lsl.lsl_create_inlet,
     pull_chunk: lsl.lsl_pull_chunk_f,
+    StreamInlet,
 };

@@ -1,4 +1,4 @@
-const lsl = require('../index');
+const lsl = require('..');
 const ref = require('ref');
 
 // Resolve an LSL stream with type='EEG'
