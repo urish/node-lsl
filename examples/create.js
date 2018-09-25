@@ -9,6 +9,7 @@ const info = lsl.create_streaminfo(
     'Dummy EEG Device',
 );
 const desc = lsl.get_desc(info);
+console.log('desc', desc);
 lsl.append_child_value(desc, 'manufacturer', 'Random Inc.');
 const channels = lsl.append_child(desc, 'channels');
 for (let i = 0; i < numChannels; i++) {

@@ -48,6 +48,10 @@ const lsl = ffi.Library(path.join(__dirname, 'prebuilt', libName), {
     lsl_create_streaminfo: [streamInfo, ['string', 'string', 'int', 'double', 'int', 'string']],
     lsl_destroy_streaminfo: ['void', [streamInfo]],
     lsl_copy_streaminfo: [streamInfo, [streamInfo]],
+    lsl_get_channel_count: ['int', [streamInfo]],
+    lsl_get_type: ['string', [streamInfo]],
+    lsl_get_nominal_srate: ['double', [streamInfo]],
+    lsl_get_channel_format: ['int', [streamInfo]],
     lsl_get_desc: [xmlPtr, [streamInfo]],
     lsl_append_child_value: ['void', [xmlPtr, 'string', 'string']],
     lsl_append_child: [xmlPtr, [xmlPtr, 'string']],
@@ -66,13 +70,59 @@ const resolve_byprop = (prop, value, min = 1, timeout = 10) => {
     const numStreams = lsl.lsl_resolve_byprop(buf, 1024, prop, value, min, timeout);
     const streams = [];
     for (let i = 0; i < numStreams; i++) {
-        streams.push(ref.readPointer(buf, i));
+        streams.push(new StreamInfo(ref.readPointer(buf, i)));
     }
     return streams;
 };
 
+/** A class that stores the declaration of a data stream
+ *
+ */
+
+// Need channel_count buffers? value_type
+class StreamInfo {
+    constructor(
+        handle = null,
+        name = 'untitled',
+        type = '',
+        channel_count = 1,
+        nominal_srate = 0,
+        channel_format = channel_format_t.cft_float32,
+        source_id = '',
+    ) {
+        if (handle !== null) {
+            this.object = handle; //Might need to copy ref
+        } else {
+            this.object = lsl.lsl_create_streaminfo(
+                name,
+                type,
+                channel_count,
+                nominal_srate,
+                channel_format,
+                source_id,
+            );
+        }
+    }
+
+    getChannelCount() {
+        return lsl.lsl_get_channel_count(this.object);
+    }
+
+    getType() {
+        return lsl.lsl_get_type(this.object);
+    }
+
+    getNominalSamplingRate() {
+        return lsl.lsl_get_nominal_srate(this.object);
+    }
+
+    getChannelFormat() {
+        return Object.entries(channel_format_t)[lsl.lsl_get_channel_format(this.object)];
+    }
+}
+
 /**
- * Creates an instance of the stream inlet object.
+ * A stream inlet. Inlets are used to receive streaming data (and meta-data) from the network.
  * @constructor
  * @name StreamInlet
  * @param ...
@@ -87,12 +137,12 @@ class StreamInlet extends EventEmitter {
         this.inlet = lsl.lsl_create_inlet(stream, this.max_buflen, this.max_chunklen, this.recover);
     }
 
-    streamChunks(timeout = 10) {
+    streamChunks(timeout = 0.0) {
         this.isStreaming = true;
         this.timeout = timeout;
         this.errCode = 0;
-        let sampleBuffer = new FloatArray(this.max_buflen); // Not sure how we should set the size of this thing. Look to C# wrapper for ideas
-        let timestampBuffer = new DoubleArray(this.max_buflen);
+        let sampleBuffer = new FloatArray(1024); // Not sure how we should set the size of this thing. Look to C# wrapper for ideas
+        let timestampBuffer = new DoubleArray(1024);
         try {
             while (this.isStreaming) {
                 const samps = lsl.lsl_pull_chunk_f(
@@ -104,7 +154,6 @@ class StreamInlet extends EventEmitter {
                     this.timeout,
                     this.errCode,
                 );
-                console.log('pulled ', samps);
                 this.emit('chunk', { samples: sampleBuffer.toJSON(), timestamps: timestampBuffer.toJSON() });
             }
         } catch (e) {
@@ -145,4 +194,5 @@ module.exports = {
     create_inlet: lsl.lsl_create_inlet,
     pull_chunk: lsl.lsl_pull_chunk_f,
     StreamInlet,
+    StreamInfo,
 };
