@@ -48,6 +48,7 @@ const lsl = ffi.Library(path.join(__dirname, 'prebuilt', libName), {
     lsl_create_streaminfo: [streamInfo, ['string', 'string', 'int', 'double', 'int', 'string']],
     lsl_destroy_streaminfo: ['void', [streamInfo]],
     lsl_copy_streaminfo: [streamInfo, [streamInfo]],
+    lsl_get_name: ['string', [streamInfo]],
     lsl_get_channel_count: ['int', [streamInfo]],
     lsl_get_type: ['string', [streamInfo]],
     lsl_get_nominal_srate: ['double', [streamInfo]],
@@ -76,32 +77,30 @@ const resolve_byprop = (prop, value, min = 1, timeout = 10) => {
 };
 
 /** A class that stores the declaration of a data stream
- *
+ * @constructor
+ * @name StreamInfo
+ * @param ...
  */
 
-// Need channel_count buffers? value_type
 class StreamInfo {
     constructor(
         handle = null,
         name = 'untitled',
         type = '',
-        channel_count = 1,
-        nominal_srate = 0,
-        channel_format = channel_format_t.cft_float32,
-        source_id = '',
+        channelCount = 1,
+        nominalSrate = 0,
+        channelFormat = channel_format_t.cft_float32,
+        sourceID = '',
     ) {
         if (handle !== null) {
             this.object = handle; //Might need to copy ref
         } else {
-            this.object = lsl.lsl_create_streaminfo(
-                name,
-                type,
-                channel_count,
-                nominal_srate,
-                channel_format,
-                source_id,
-            );
+            this.object = lsl.lsl_create_streaminfo(name, type, channelCount, nominalSrate, channelFormat, sourceID);
         }
+    }
+
+    getName() {
+        return lsl.lsl_get_name(this.object);
     }
 
     getChannelCount() {
@@ -128,34 +127,61 @@ class StreamInfo {
  * @param ...
  */
 class StreamInlet extends EventEmitter {
-    constructor(stream, max_buflen = 360, max_chunklen = 0, recover = 1) {
+    constructor(info, maxBuflen = 360, maxChunklen = 0, recover = 1) {
         super();
-        this.max_buflen = max_buflen;
-        this.max_chunklen = max_chunklen;
+        this.maxBuflen = maxBuflen;
+        this.maxChunklen = maxChunklen;
         this.recover = recover;
         this.isStreaming = false;
-        this.inlet = lsl.lsl_create_inlet(stream, this.max_buflen, this.max_chunklen, this.recover);
+        this.inlet = lsl.lsl_create_inlet(info.object, this.maxBuflen, this.maxChunklen, this.recover);
+        this.channelCount = info.getChannelCount();
+        this.channelFormat = info.getChannelFormat();
+        this.samplingRate = info.getNominalSamplingRate();
     }
 
-    streamChunks(timeout = 0.0) {
-        this.isStreaming = true;
-        this.timeout = timeout;
-        this.errCode = 0;
-        let sampleBuffer = new FloatArray(1024); // Not sure how we should set the size of this thing. Look to C# wrapper for ideas
-        let timestampBuffer = new DoubleArray(1024);
+    pullChunk(timeout = 0.0, maxSamples = 1024) {
+        const sampleBuffer = new FloatArray(maxSamples * this.channelCount);
+        const timestampBuffer = new DoubleArray(maxSamples);
+        const samples = lsl.lsl_pull_chunk_f(
+            this.inlet,
+            sampleBuffer,
+            timestampBuffer,
+            sampleBuffer.length,
+            timestampBuffer.length,
+            timeout,
+            0,
+        );
+        return { samples: sampleBuffer.toJSON(), timestamps: timestampBuffer.toJSON() };
+    }
+
+    // Note: interval is derived from samplingRate and chunk size
+    streamChunks(chunkSize, timeout = 0.0, maxSamples = chunkSize * 1.5, errCode = 0) {
+        const timerInterval = (1000 / this.samplingRate) * chunkSize;
+        const sampleBuffer = new FloatArray(maxSamples * this.channelCount);
+        const timestampBuffer = new DoubleArray(maxSamples);
+        let samples = 0;
+        const read = () => {
+            process.nextTick(() => {
+                if (this.isStreaming) {
+                    samples = lsl.lsl_pull_chunk_f(
+                        this.inlet,
+                        sampleBuffer,
+                        timestampBuffer,
+                        sampleBuffer.length,
+                        timestampBuffer.length,
+                        timeout,
+                        errCode,
+                    );
+                    this.emit('chunk', {
+                        data: this._parseSampleBuffer(sampleBuffer.toJSON(), samples),
+                        timestamps: timestampBuffer.toJSON().slice(0, samples / this.channelCount),
+                    });
+                }
+            });
+        };
         try {
-            while (this.isStreaming) {
-                const samps = lsl.lsl_pull_chunk_f(
-                    this.inlet,
-                    sampleBuffer,
-                    timestampBuffer,
-                    sampleBuffer.length,
-                    timestampBuffer.length,
-                    this.timeout,
-                    this.errCode,
-                );
-                this.emit('chunk', { samples: sampleBuffer.toJSON(), timestamps: timestampBuffer.toJSON() });
-            }
+            this.isStreaming = true;
+            this.interval = setInterval(read, timerInterval);
         } catch (e) {
             console.error(e);
             this.close();
@@ -164,11 +190,25 @@ class StreamInlet extends EventEmitter {
 
     close() {
         this.isStreaming = false;
+        clearInterval(this.interval);
         this.emit('closed');
     }
 
     getIsStreaming() {
         return this.isStreaming;
+    }
+
+    _parseSampleBuffer(sampleArray, samples) {
+        let numSamples = samples / this.channelCount;
+        let parsedArray = [];
+        for (let i = 0; i < this.channelCount; i++) {
+            let channelArray = new Array(numSamples).fill(NaN);
+            for (let k = 0; k < numSamples; k++) {
+                channelArray[k] = sampleArray[i + k * this.channelCount];
+            }
+            parsedArray.push(channelArray);
+        }
+        return parsedArray;
     }
 }
 
