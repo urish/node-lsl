@@ -12,5 +12,5 @@ console.log('Resolved ', streams.length, ' streams of EEG: ', streams.map((info)
 console.log('Connecting...');
 streamInlet = new lsl.StreamInlet(streams[0]);
 streamInlet.streamChunks(LSL_CHUNK);
-streamInlet.on('chunk', console.log);
+streamInlet.on('chunk', (dataObject) => console.log(dataObject.data));
 streamInlet.on('closed', console.log);
