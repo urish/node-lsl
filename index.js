@@ -232,7 +232,7 @@ module.exports = {
     destroy_outlet: lsl.lsl_destroy_outlet,
     resolve_byprop,
     create_inlet: lsl.lsl_create_inlet,
-    pull_chunk: lsl.lsl_pull_chunk_f,
+    pull_chunk_f: lsl.lsl_pull_chunk_f,
     StreamInlet,
     StreamInfo,
 };
