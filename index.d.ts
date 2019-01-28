@@ -60,7 +60,7 @@ function resolve_byprop(
     timeout: number,
 ): streamInfo;
 function create_inlet(stream: streamInfo, max_buflen: number, max_chunklen: number, recover: number);
-function pull_chunk(
+function pull_chunk_f(
     inlet: inletType,
     data_buffer: FloatArray,
     timestamp_buffer: DoubleArray,
