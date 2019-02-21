@@ -6,7 +6,9 @@
 
 Not all functions are currently available - pull requests are welcome (please also include a [relevant test](index.spec.js)).
 
-## Usage example:
+## Usage examples:
+
+### Sending data
 
 ```javascript
 const lsl = require('node-lsl');
@@ -30,4 +32,15 @@ setInterval(function() {
     }
     lsl.push_sample_ft(outlet, new lsl.FloatArray(samples), lsl.local_clock());
 }, 10);
+```
+### Receiving data
+
+```javascript
+const lsl = require('node-lsl');
+const streams = lsl.resolve_byprop('type', 'EEG');
+
+streamInlet = new lsl.StreamInlet(streams[0]);
+streamInlet.streamChunks(12, 1000);
+streamInlet.on('chunk', console.log);
+streamInlet.on('closed', () => console.log('LSL inlet closed'));
 ```
