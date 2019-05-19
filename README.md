@@ -1,6 +1,6 @@
 # node-lsl
 
-[Lab stream layerl (LSL)](https://github.com/sccn/labstreaminglayer) bindings for node.js.
+[Lab stream layer (LSL)](https://github.com/sccn/labstreaminglayer) bindings for node.js.
 
 [![Build Status](https://travis-ci.org/urish/node-lsl.png?branch=master)](https://travis-ci.org/urish/node-lsl)
 
